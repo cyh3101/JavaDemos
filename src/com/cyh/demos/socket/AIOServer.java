@@ -15,8 +15,9 @@ import java.util.concurrent.Executors;
 
 public class AIOServer {
 
-	static final int PORT = 5000;
+	static final int PORT = 5001;
 	static final String UTF_8 = "UTF-8";
+	AsynchronousServerSocketChannel serverChannel = null;
 	static List<AsynchronousSocketChannel> channelList = new ArrayList<>();
 	
 	public void startListen() throws IOException{
@@ -24,10 +25,17 @@ public class AIOServer {
 		AsynchronousChannelGroup channelGroup = 
 				AsynchronousChannelGroup.withThreadPool(executor);
 		//创建ServerChannel,并绑定相关地址端口
-		AsynchronousServerSocketChannel serverChannel = 
-				AsynchronousServerSocketChannel.open(channelGroup)
+		serverChannel = AsynchronousServerSocketChannel.open(channelGroup)
 				.bind(new InetSocketAddress(PORT));
+		//serverChannel = AsynchronousServerSocketChannel.open()
+		//				.bind(new InetSocketAddress(PORT));
 		serverChannel.accept(null, new AcceptHandler(serverChannel));
+		try {
+			Thread.sleep(20000);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 	
 	class AcceptHandler implements CompletionHandler<AsynchronousSocketChannel, Object>{
@@ -49,6 +57,7 @@ public class AIOServer {
 					buffer.flip();
 					String content = StandardCharsets.UTF_8
 							.decode(buffer).toString();
+					System.out.println("来自客户端的消息:" + content);
 					for (AsynchronousSocketChannel c : AIOServer.channelList) {
 						try {
 							c.write(ByteBuffer.wrap(content.getBytes(
@@ -77,10 +86,12 @@ public class AIOServer {
 		}
 		
 	}
-	public static void main(String[] args) {
+	public static void main(String[] args) throws InterruptedException {
 		AIOServer server = new AIOServer();
+		//Thread.sleep(1000);
 		try {
 			server.startListen();
+			
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
